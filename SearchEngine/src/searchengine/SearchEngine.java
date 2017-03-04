@@ -20,11 +20,13 @@ public class SearchEngine {
     public static void main(String[] args) throws IOException {
         // TODO code application logic here
         DataSet s1 = new DataSet();
-        WebCrawler seed1=new WebCrawler("https://www.google.com.eg/",s1);
-        WebCrawler seed2=new WebCrawler("https://www.google.com.eg/",s1);
+        DataMap m1 = new DataMap();
+        System.out.println(m1.MapCount.get("h"));
+        WebCrawler seed1=new WebCrawler("https://www.google.com.eg/",s1,m1);
+        //WebCrawler seed2=new WebCrawler("https://www.google.com.eg/",s1,m1);
         try{
             seed1.join();
-            seed2.join();
+           // seed2.join();
         }
         catch (InterruptedException e)
         {
@@ -32,6 +34,7 @@ public class SearchEngine {
         }
          System.out.println("Size:");
         System.out.println(s1.web_links.size());
+        System.out.println(m1.MapCount.get("www.google.com.eg"));
     }
     
 }

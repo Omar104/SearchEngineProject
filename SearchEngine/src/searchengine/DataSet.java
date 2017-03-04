@@ -17,6 +17,7 @@ import java.util.TreeSet;
 public class DataSet {
     public static  TreeSet<String> web_links = new TreeSet<String>();
     
+    
     public synchronized void Add_Set(String temp)
      {
          web_links.add(temp);
@@ -26,8 +27,6 @@ public class DataSet {
          return web_links.contains(temp);
      }
 
-    public synchronized static Set<String> GetWebLinks() {
-        return web_links;
-    }
+   
      
 }
