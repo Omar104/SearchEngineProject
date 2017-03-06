@@ -8,6 +8,7 @@ package searchengine;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
+import javax.print.DocFlavor;
 
 
 /**
@@ -22,9 +23,24 @@ public class DataSet {
      {
          web_links.add(temp);
      }
+    public synchronized void RemoveElement_Set(String temp)
+     {
+         web_links.remove(temp);
+     }
+    public synchronized Integer Get_Size()
+     {
+       return web_links.size();
+     }
      public synchronized boolean Contains_Set(String temp)
      {
          return web_links.contains(temp);
+     }
+     public synchronized void Print_Set(){
+         
+         for (String s :web_links) {
+          System.out.println(s);
+         }
+             
      }
 
    
