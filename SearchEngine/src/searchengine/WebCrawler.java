@@ -126,7 +126,7 @@ public class WebCrawler extends Thread{
                 if(cnt>=2)
                 {
                     DM.AddBucket(u);
-                System.out.println(u);
+               // System.out.println(u);
                 tempp=u;
                 }
                 else
