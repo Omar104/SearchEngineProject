@@ -5,12 +5,15 @@
  */
 package searchengine;
 
+import com.mysql.jdbc.exceptions.MySQLIntegrityConstraintViolationException;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Queue;
 
 /**
  *
@@ -42,15 +45,14 @@ public DataBase(String User,String Password)
         
 }
       
-public synchronized void insertSet(String url2)
+public  void insertSet(String url2)
 {
     ResultSet urls = null;
     int counT=0;
               try {
                   urls = statementQ.executeQuery("select count(*) AS COUNT1 from crawlerset where URL='"+url2+"'");
-                  while(urls.next()){
+                  urls.next();
                    counT=urls.getInt(1);
-                  }
             if(counT==0)
                 {
                     statementQ.executeUpdate("insert into crawlerset values('"+url2+"')");
@@ -61,15 +63,14 @@ public synchronized void insertSet(String url2)
              
      
 }
-public synchronized int getSize(String TableName)
+public int getSize(String TableName)
 {
     ResultSet urls = null;
     int counT=0;
               try {
                   urls = statementQ.executeQuery("select count(*) AS COUNT1 from `"+TableName+"`");
-                  while(urls.next()){
+                 urls.next();
                    counT=urls.getInt(1);
-                  }
             
               } catch (SQLException ex) {
                   Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
@@ -77,15 +78,16 @@ public synchronized int getSize(String TableName)
              
      return counT;
 }
-public synchronized boolean containsSet(String url2)
+public boolean containsSet(String url2)
 {
     ResultSet urls = null;
     int counT=0;
               try {
                   urls = statementQ.executeQuery("select count(*) AS COUNT1 from crawlerset where URL='"+url2+"'");
-                  while(urls.next()){
+                   urls.next();
                    counT=urls.getInt(1);
-                  }
+                   
+                  
             if(counT==0)
                 return false;
                 
@@ -97,7 +99,7 @@ public synchronized boolean containsSet(String url2)
              return false;
      
 }
-public synchronized void deleteAll(String TableName)
+public  void deleteAll(String TableName)
 {
         try {
             statementQ.executeUpdate("DELETE FROM `"+TableName+"` WHERE 1");
@@ -107,15 +109,15 @@ public synchronized void deleteAll(String TableName)
         }
             
 }
-public synchronized void insertMap(String url2)
+public void insertMap(String url2)
 {
     ResultSet urls = null;
     int counT=0;
         try {
             urls = statementQ.executeQuery("select count(*) AS COUNT1 from basecount where BaseUrl='"+url2+"'");
-            while(urls.next()){
-             counT=urls.getInt(1);
-            }
+            urls.next();   
+             counT=urls.getInt("COUNT1");
+            
       if(counT==0)
           {
               statementQ.executeUpdate("insert into basecount values('"+url2+"','1')");
@@ -130,7 +132,7 @@ public synchronized void insertMap(String url2)
 
      
 }
-public synchronized int getCountMap(String url2)
+public int getCountMap(String url2)
 {
     ResultSet urls = null;
     int counT=0;
@@ -148,20 +150,22 @@ public synchronized int getCountMap(String url2)
             
      return counT;
 }
-public synchronized void insertQueue(String url2)
+public void insertQueue(String url2)
 {
     
         try {
             statementQ.executeUpdate("INSERT INTO `crawlerqueue`(`UrlName`) VALUES ('"+url2+"')");
             
       
-        } catch (SQLException ex) {
-            Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
         }
+        catch (SQLException ex) {
+            // Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
 
      
 }
-public synchronized void deleteRecord(String url2,String TableName,String col)
+public void deleteRecord(String url2,String TableName,String col)
 {
     
         try {
@@ -174,4 +178,61 @@ public synchronized void deleteRecord(String url2,String TableName,String col)
 
      
 }
+public  Queue<String> getQueue()
+{
+    Queue<String> q= new LinkedList<>();
+    ResultSet urls = null;
+     try {
+            urls=statementQ.executeQuery("Select * from `crawlerqueue` where 1 ORDER BY `qID` ASC");
+            while(urls.next()){
+             q.add(urls.getString("UrlName"));
+            }
+            
+      
+        } catch (SQLException ex) {
+            Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    
+
+return q;
 }
+public void setAutoIncQueue()
+{
+    
+     try {
+           statementQ.executeUpdate("ALTER TABLE `crawlerqueue` auto_increment = 1");
+            
+            
+      
+        } catch (SQLException ex) {
+            Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
+        }
+}
+
+public  int getQueueFrontID()
+{
+    ResultSet urls = null;
+    int qID=0;
+     try {
+            urls=statementQ.executeQuery("SELECT * FROM crawlerqueue Limit 1");
+            urls.next();  
+            qID=urls.getInt("qID");
+            
+            
+      
+        } catch (SQLException ex) {
+            Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    
+
+return qID;
+}
+public  void deleteQueueFront()
+{
+    int id=getQueueFrontID();
+    deleteRecord(Integer.toString(id),"crawlerqueue","qID");
+
+}
+
+}
+

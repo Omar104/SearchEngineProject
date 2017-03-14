@@ -31,19 +31,20 @@ public class WebCrawler extends Thread{
     private String root;
     private static final String USER_AGENT =
             "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.112 Safari/535.1";
-    private DataSet DS;
-    private DataMap DM;
+    
+    private DataBase DB1;
     private int TotalSize;
     private float PercentageTotalSize=0.01f;
     private int BaseCounter;
-    public  WebCrawler(String temp, DataSet Data_Temp,DataMap Data_Map,int TS)
+    public  WebCrawler(String temp,int TS)
     {
-        DS = Data_Temp;
-        DM=Data_Map;
+        DB1=new DataBase("root","");
         TotalSize=TS;
-        BaseCounter=(int)(TotalSize*PercentageTotalSize);
+        //BaseCounter=(int)(TotalSize*PercentageTotalSize);
+        BaseCounter=1000;
         this.root = temp;
         this.start();
+        
     }
 
     
@@ -60,19 +61,29 @@ public class WebCrawler extends Thread{
   
     private void BFS(String seed)  throws IOException 
     {
-       
+        if(DB1.getSize("crawlerqueue")!=0)
+        {
+            queue=DB1.getQueue();
+        }
+        else{   
         queue.add(seed);
-        DS.Add_Set(seed);
+        DB1.insertQueue(seed);
+        DB1.insertSet(seed);
+        }
         while(!queue.isEmpty()){
-            if(DS.Get_Size()>=TotalSize)
+            if(DB1.getSize("crawlerset")>=TotalSize)
+            {
+                DB1.deleteAll("crawlerqueue");
+                DB1.setAutoIncQueue();
                 return;
+            }
+            
             String web_link=queue.poll();
-            /**/
+            
+           
            
            // System.out.println(web_link);//remove
-            
-            
-            
+
       try
         {
             Connection connection = Jsoup.connect(web_link).userAgent(USER_AGENT);
@@ -95,16 +106,19 @@ public class WebCrawler extends Thread{
        //      DS.RemoveElement_Set(web_link);
          //                     continue;
 //          }
-            if(DS.Get_Size()>=TotalSize)//malhaash lazma
-                   return;
+            
            // System.out.println(web_link);
             //-----------------
             Elements linksOnPage = htmlDocument.select("a[href]");
             System.out.println("Found (" + linksOnPage.size() + ") links");
             for(Element link : linksOnPage)
             {
-                if(DS.Get_Size()>=TotalSize)
+                if(DB1.getSize("crawlerset")>=TotalSize)
+                {
+                    DB1.deleteAll("crawlerqueue");
+                    DB1.setAutoIncQueue();
                     return;
+                }
                   
                 String LinkHTTPS=link.attr("abs:href" );//link.absUrl("href")
                 URL LinkURL=new URL(LinkHTTPS);
@@ -125,17 +139,18 @@ public class WebCrawler extends Thread{
               
                 if(cnt>=2)
                 {
-                    DM.AddBucket(u);
+                    DB1.insertMap(u);
                // System.out.println(u);
                 tempp=u;
                 }
                 else
-                    DM.AddBucket(tempp);
+                    DB1.insertMap(tempp);
                 
                     //&&LangEn(LinkHTTPS)
-                if(!DS.Contains_Set(LinkHTTPS)&&DM.GetCount(tempp)<BaseCounter){
+                if(!DB1.containsSet(LinkHTTPS)&&DB1.getCountMap(tempp)<BaseCounter){
                    queue.add(LinkHTTPS);
-                    DS.Add_Set(LinkHTTPS);
+                   DB1.insertQueue(LinkHTTPS);
+                    DB1.insertSet(LinkHTTPS);
               // System.out.println(LinkHTTPS);
                    // System.out.println(LinkURL.getHost());
               
@@ -144,6 +159,9 @@ public class WebCrawler extends Thread{
                
                
             }
+            //delete front of the queue from DB
+            DB1.deleteQueueFront();
+            
             
         }
       catch(IOException ioe)
@@ -159,6 +177,8 @@ public class WebCrawler extends Thread{
        // }
             
     }
+        //reset autoInc to 1
+        DB1.setAutoIncQueue();
     }
     
     private boolean LangEn(String LinkHTTPS)
