@@ -25,7 +25,7 @@ import java.util.TreeMap;
  */
 public class NormalizeURL
 {
-    public static String normalize(final String taintedURL) throws MalformedURLException
+    public static String normalize(final String taintedURL) throws MalformedURLException, UnsupportedEncodingException
     {
         final URL url;
         try
@@ -58,10 +58,12 @@ public class NormalizeURL
         {
             queryString = "";
         }
-
-        return url.getProtocol() + "://" + url.getHost()
+        String normalized = url.getProtocol() + "://" + url.getHost()
             + (port != -1 && port != 80 ? ":" + port : "")
             + path + queryString;
+        normalized=URLDecoder.decode(normalized, "UTF-8");
+        //normalized.replace("%26");
+        return  normalized;
     }
 
     /**
