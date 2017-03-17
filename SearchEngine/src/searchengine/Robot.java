@@ -29,8 +29,9 @@ public class Robot {
             
             try{
                 
-             BufferedReader reader = new BufferedReader(new InputStreamReader(robot_url.openStream()));
-             String line =" ";
+             BufferedReader reader;
+                reader = new BufferedReader(new InputStreamReader(robot_url.openStream()));
+             String line;
              
              while((line = reader.readLine()) != null)
               {
@@ -40,7 +41,7 @@ public class Robot {
                        {
                           if(line.contains("Disallow: ")) 
                           {
-                              dis.add(line.substring(10 ,line.length()));
+                              dis.add(url.toString()+line.substring(11,line.length()));
                           }
                           else if(!line.contains("Allow: "))
                               break;

@@ -41,7 +41,7 @@ public class WebCrawler extends Thread{
         DB1=new DataBase("root","");
         TotalSize=TS;
         //BaseCounter=(int)(TotalSize*PercentageTotalSize);
-        BaseCounter=1000;
+        BaseCounter=10;
         this.root = temp;
         this.start();
         
@@ -58,7 +58,6 @@ public class WebCrawler extends Thread{
             Logger.getLogger(WebCrawler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-  
     private void BFS(String seed)  throws IOException 
     {
         if(DB1.getSize("crawlerqueue")!=0)
@@ -86,6 +85,7 @@ public class WebCrawler extends Thread{
 
       try
         {
+           
             Connection connection = Jsoup.connect(web_link).userAgent(USER_AGENT);
             Document htmlDocument = connection.get();
             WebCrawler.htmlDocument = htmlDocument;
@@ -111,6 +111,8 @@ public class WebCrawler extends Thread{
             //-----------------
             Elements linksOnPage = htmlDocument.select("a[href]");
             System.out.println("Found (" + linksOnPage.size() + ") links");
+            HashSet<String> h1 = Robot.disallowed(new URL(web_link));
+            
             for(Element link : linksOnPage)
             {
                 if(DB1.getSize("crawlerset")>=TotalSize)
@@ -119,9 +121,17 @@ public class WebCrawler extends Thread{
                     DB1.setAutoIncQueue();
                     return;
                 }
-                  
+                 
+               
                 String LinkHTTPS=link.attr("abs:href" );//link.absUrl("href")
                 URL LinkURL=new URL(LinkHTTPS);
+                boolean flag = true ;
+                for(String disallowed : h1)
+                {
+                    flag = LinkHTTPS.contains(disallowed) ? false :  flag; 
+                }
+                if(flag)
+                {
                 String tempp=LinkURL.getHost();
                 int cnt=0;
                 String u="";
@@ -158,6 +168,7 @@ public class WebCrawler extends Thread{
                 }
                
                
+            }
             }
             //delete front of the queue from DB
             DB1.deleteQueueFront();

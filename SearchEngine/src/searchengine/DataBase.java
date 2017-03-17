@@ -5,7 +5,6 @@
  */
 package searchengine;
 
-import com.mysql.jdbc.exceptions.MySQLIntegrityConstraintViolationException;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,7 +19,7 @@ import java.util.Queue;
  * @author Omarove10
  */
 public class DataBase {
-          private String url = "jdbc:mysql://localhost:3306/searchengine";
+private String url = "jdbc:mysql://localhost:3306/searchengine";
 private String user = "";
 private String password = "";
 private Statement statementQ;

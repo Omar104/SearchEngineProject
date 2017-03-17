@@ -25,19 +25,16 @@ public class SearchEngine {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        DataBase DB2=new DataBase("root","");
-//        DB2.deleteAll("crawlerset");
-//        DB2.deleteAll("crawlerqueue");
-//        DB2.deleteAll("basecount");
-
-        WebCrawler seed1=new WebCrawler("https://en.wikipedia.org/",20);//total size as input
-        WebCrawler seed2=new WebCrawler("https://www.google.com.eg/",20);
-        WebCrawler seed3=new WebCrawler("https://DMOZ.org/",20);
         
+        DataBase DB2 = new DataBase("root","");
+        DB2.deleteAll("crawlerset");
+        DB2.deleteAll("crawlerqueue");
+        DB2.deleteAll("basecount");
+
+        WebCrawler seed1=new WebCrawler("https://en.wikipedia.org/",1000);//total size as input
+   
         try{
             seed1.join();
-            seed2.join();
-            seed3.join();
         }
         catch (InterruptedException e)
         {
