@@ -25,16 +25,18 @@ public class SearchEngine {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        
+       
         DataBase DB2 = new DataBase("root","");
-        DB2.deleteAll("crawlerset");
-        DB2.deleteAll("crawlerqueue");
         DB2.deleteAll("basecount");
-
-        WebCrawler seed1=new WebCrawler("https://en.wikipedia.org/",1000);//total size as input
+        DB2.deleteAll("crawlerqueue");
+        DB2.deleteAll("crawlerset");
+        int maxCrawler=DB2.getMaxCrawler();
+        WebCrawler seed1=new WebCrawler("https://en.wikipedia.org/",50,maxCrawler+1);
+        WebCrawler seed2=new WebCrawler("https://google.com.eg/",50,maxCrawler+1);
    
         try{
             seed1.join();
+            seed2.join();
         }
         catch (InterruptedException e)
         {
@@ -43,7 +45,6 @@ public class SearchEngine {
          System.out.println("Size:");
         
         System.out.println(DB2.getSize("crawlerqueue"));
-       // System.out.println(m1.MapCount.get("www.google.com.eg"));
        
     }
     

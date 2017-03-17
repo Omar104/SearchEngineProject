@@ -44,17 +44,18 @@ public DataBase(String User,String Password)
         
 }
       
-public  void insertSet(String url2)
+public  void insertSet(String url2,int crawlID)
 {
     ResultSet urls = null;
     int counT=0;
               try {
+                  url2= url2.replaceAll("'","\\\\'" );
                   urls = statementQ.executeQuery("select count(*) AS COUNT1 from crawlerset where URL='"+url2+"'");
                   urls.next();
                    counT=urls.getInt(1);
             if(counT==0)
                 {
-                    statementQ.executeUpdate("insert into crawlerset values('"+url2+"')");
+                    statementQ.executeUpdate("insert into crawlerset values('"+crawlID+"','"+url2 +"')");
                 }
               } catch (SQLException ex) {
                   Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
@@ -77,22 +78,29 @@ public int getSize(String TableName)
              
      return counT;
 }
-public boolean containsSet(String url2)
+public boolean containsSet(String url2,int CrawlerID)
 {
     ResultSet urls = null;
     int counT=0;
               try {
-                  urls = statementQ.executeQuery("select count(*) AS COUNT1 from crawlerset where URL='"+url2+"'");
+                 url2= url2.replaceAll("'","\\\\'" );
+                  urls = statementQ.executeQuery("select count(*)  from crawlerset where URL ='"+url2+"' AND  CrawlerID ='"+CrawlerID+"'");
                    urls.next();
                    counT=urls.getInt(1);
                    
                   
             if(counT==0)
+            {
+               
+                 statementQ.executeUpdate("UPDATE  `crawlerset` SET `CrawlerID` ='" +CrawlerID+"' where `URL` ='"+url2+"'" );
+                 
                 return false;
+            }
                 
             else
                 return true;
               } catch (SQLException ex) {
+                  System.out.print("el error f om l link da "+ url2);
                   Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
               }
              return false;
@@ -231,6 +239,23 @@ public  void deleteQueueFront()
     int id=getQueueFrontID();
     deleteRecord(Integer.toString(id),"crawlerqueue","qID");
 
+}
+public int getMaxCrawler()
+{
+    int count=0;
+    ResultSet urls= null;
+ try {
+                  urls = statementQ.executeQuery("SELECT max(`CrawlerID`) FROM `crawlerset`");
+                  
+                  urls.next();
+                  
+                  count=urls.getInt(1);
+                  
+
+              } catch (SQLException ex) {
+                  Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
+              }
+            return count;
 }
 
 }
