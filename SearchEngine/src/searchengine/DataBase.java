@@ -5,14 +5,18 @@
  */
 package searchengine;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.LinkedList;
+import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Queue;
 
 /**
  *
@@ -43,8 +47,23 @@ public DataBase(String User,String Password)
         
         
 }
+public void insertIndexerUrl(int id)
+{
+    
+        try {
+            statementQ.executeUpdate("INSERT INTO `indexerurl` values('"+id+"')");
+            
       
-public  void insertSet(String url2,int crawlID)
+        }
+        catch (SQLException ex) {
+            // Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+
+     
+}
+
+public  void insertSet(String url2,int crawlID) throws IOException
 {
     ResultSet urls = null;
     int counT=0;
@@ -55,20 +74,91 @@ public  void insertSet(String url2,int crawlID)
                    counT=urls.getInt(1);
             if(counT==0)
                 {
-                    statementQ.executeUpdate("insert into crawlerset values('"+crawlID+"','"+url2 +"')");
+                    statementQ.executeUpdate("insert into crawlerset (CrawlerID,URL)  values('"+crawlID+"','"+url2 +"')");
                 }
+            else 
+            {
+                
+                int id= getsetId(url2);
+                     File oldFile = new File("DOCUMENTS/"+id+".txt");
+                    oldFile.delete();
+                    
+                statementQ.executeUpdate("Update  crawlerset SET `CrawlerID` ='"+crawlID+"' where URL='"+url2+"'");
+            }
+                
               } catch (SQLException ex) {
                   Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
               }
              
      
 }
-public int getSize(String TableName)
+
+public void clearWordCount(String s)
+{
+    try {
+        statementQ.executeUpdate("DELETE FROM word_cnt where url_id = "+s);
+    } catch (SQLException ex) {
+        Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
+    }
+}
+public void pageIsIndexed(String url_id)
+{
+    try {
+        statementQ.executeUpdate("DELETE FROM  indexerurl where url_id = "+url_id);
+    } catch (SQLException ex) {
+        Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
+    }
+}
+public void insertWordIntoWordCnt(String word,String url_id,boolean title,int position)
+{
+    try {
+        if(word.length() > 20)
+            return;
+        statementQ.executeUpdate("INSERT INTO `word_cnt`(`word`, `url_id`, `title`, `position`) VALUES ('"+ word +"',"+url_id+","+ String.valueOf(title)+","+ String.valueOf(position)+ ")");
+    } catch (SQLException ex) {
+        Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
+        System.out.println(word);
+    }
+} 
+public void insertIntoWordCntPerPage(String s , int cnt)
+{
+    String Tmp = String.valueOf(cnt);
+    try {
+        statementQ.executeUpdate("delete from word_cnt_perpage where url_id = " + s);
+        statementQ.executeUpdate("INSERT INTO `word_cnt_perpage`(`url_id`, `cnt`) VALUES ("+"'"+ s +"'" +"," +Tmp + ")");
+    } catch (SQLException ex) {
+        Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
+    }
+}
+public ResultSet getIndexerUrl()
+{
+    ResultSet Res = null;
+    
+    try {
+         Res = statementQ.executeQuery("select * From  indexerurl");
+    } catch (SQLException ex) {
+        Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    return Res;
+}
+public void refreshUrlWordCnt(int cnt,String url)
+{
+    ResultSet Res = null;
+    
+    try {
+        Res = statementQ.executeQuery("select * from word_cnt_perpage where url_id = "+url);
+      } 
+        catch (SQLException ex) {
+        Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
+    }
+}
+public int getSize(String TableName, int crawlID)
 {
     ResultSet urls = null;
     int counT=0;
               try {
-                  urls = statementQ.executeQuery("select count(*) AS COUNT1 from `"+TableName+"`");
+                  
+                  urls = statementQ.executeQuery("select count(*) AS COUNT1 from `"+TableName+"` WHERE crawlerID='"+crawlID+"'");
                  urls.next();
                    counT=urls.getInt(1);
             
@@ -257,6 +347,26 @@ public int getMaxCrawler()
               }
             return count;
 }
+public int getsetId(String url2)
+{
+    int id=0;
+     url2= url2.replaceAll("'","\\\\'" );
+    ResultSet urls= null;
+ try {
+                  urls = statementQ.executeQuery("SELECT setID FROM `crawlerset`  where `URL` ='"+url2+"'");
+                  
+                  urls.next();
+                  
+                  id=urls.getInt("setID");
+                  
+
+              } catch (SQLException ex) {
+                 // System.out.println("SELECT setID FROM `crawlerset`  where `URL` ='"+url2+"'");
+                  Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
+              }
+            return id;
+}
 
 }
 
+    
