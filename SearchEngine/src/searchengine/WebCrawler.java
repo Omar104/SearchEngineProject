@@ -6,6 +6,8 @@
 
 package searchengine;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
@@ -17,7 +19,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -26,11 +27,12 @@ import org.jsoup.select.Elements;
 
 public class WebCrawler extends Thread{
     private Queue<String> queue=new LinkedList<>();
-    private static Document htmlDocument;  
-     private static Document htmlDocument2;  
+    private  Document htmlDocument;  
+     private  Document htmlDocument2;  
     private String root;
     private DataBase DB1;
      private int CrawlerID;
+     private Connection connection;
     private int TotalSize;
     private float PercentageTotalSize=0.01f;
     private int BaseCounter;
@@ -60,32 +62,38 @@ public class WebCrawler extends Thread{
     private void BFS(String seed)  throws IOException 
     {
         
-            queue=DB1.getQueue(); 
+          
             queue.add(seed);
             DB1.insertQueue(seed);
         
         while(!queue.isEmpty()){
             
-            if(DB1.getSize("crawlerset")>=TotalSize)
+            if(DB1.getSize("crawlerset",CrawlerID)>=TotalSize)
             {
                 DB1.deleteAll("crawlerqueue");
+                queue.clear();
                 DB1.setAutoIncQueue();
-                return;
+                CrawlerID++;
+                DB1.insertSet(root, CrawlerID);
+               
             }
+           
             
             String web_link=queue.poll();
+             //delete front of the queue from DB
+            DB1.deleteQueueFront();
             web_link=NormalizeURL.normalize(web_link);
            
       try
         {
             String tempp=LangEn(new URL(web_link));
-            Connection connection;
+            
              if(!DB1.containsSet(web_link,CrawlerID)&&DB1.getCountMap(tempp)<BaseCounter)
             {
-                connection = Jsoup.connect(web_link);
-                WebCrawler.htmlDocument = connection.get();
-                
-                DB1.insertSet(web_link,CrawlerID); // mtnsa4 ya omar ya sayed w ya omar ya said t-edito 3l insert
+                DownloadDocument(web_link);
+               int id=DB1.getsetId(web_link);
+               DB1.insertIndexerUrl(id);
+               
             }
              
             else continue;
@@ -111,19 +119,12 @@ public class WebCrawler extends Thread{
                     flag = LinkHTTPS.contains(disallowed) ? false :  flag; 
                 }
                 if(flag)
-                {
-                    
-                 
-                      queue.add(LinkHTTPS);
+                {      queue.add(LinkHTTPS);
                       DB1.insertQueue(LinkHTTPS);
-                   
-                     
-               
-               
+ 
             }
             }
-            //delete front of the queue from DB
-            DB1.deleteQueueFront();
+           
             
             
         }
@@ -171,5 +172,16 @@ public class WebCrawler extends Thread{
                     DB1.insertMap(tempp);
      
                 return tempp;
+    }
+    
+    private synchronized void  DownloadDocument(String web_link) throws IOException
+    {
+            connection = Jsoup.connect(web_link).timeout(7000);
+                this.htmlDocument = connection.get();
+                DB1.insertSet(web_link,CrawlerID); // mtnsa4 ya omar ya sayed w ya omar ya said t-edito 3l insert
+                 int id= DB1.getsetId(web_link);
+                    BufferedWriter out = new BufferedWriter(new FileWriter("DOCUMENTS/"+id+".txt"));
+                    out.write(this.htmlDocument.toString());
+                    out.close();
     }
 }
