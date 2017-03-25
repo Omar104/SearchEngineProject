@@ -34,15 +34,16 @@ public class WebCrawler extends Thread{
      private int CrawlerID;
      private Connection connection;
     private int TotalSize;
-    private float PercentageTotalSize=0.01f;
+    private float PercentageTotalSize=0.07f;
     private int BaseCounter;
-    public  WebCrawler(String temp,int TS,int CrawlID)
+    public  WebCrawler(String temp,int TS,int CrawlID,Queue<String> Q1)
     {
+        this.queue = Q1;
         CrawlerID=CrawlID;
         DB1=new DataBase("root","");
         TotalSize=TS;
-        //BaseCounter=(int)(TotalSize*PercentageTotalSize);
-        BaseCounter=10;
+        BaseCounter=(int)(TotalSize*PercentageTotalSize);
+       // BaseCounter= 300;
         this.root = temp;
         this.start();
         
@@ -66,23 +67,27 @@ public class WebCrawler extends Thread{
             queue.add(seed);
             DB1.insertQueue(seed);
         
-        while(!queue.isEmpty()){
+            while(!queue.isEmpty()){
             
             if(DB1.getSize("crawlerset",CrawlerID)>=TotalSize)
-            {
+            {  
                 DB1.deleteAll("crawlerqueue");
+                 DB1.setAutoIncQueue();
                 queue.clear();
-                DB1.setAutoIncQueue();
-                CrawlerID++;
-                DB1.insertSet(root, CrawlerID);
-               
+              
+               // CrawlerID++;
+              //  DB1.insertSet(root, CrawlerID);
+//                queue.add(root);
+//                DB1.insertQueue(root); bdl de dnay l indexer
+                DB1.deleteAll("basecount");
+                return ;
             }
-           
+            System.out.println(Thread.currentThread().getName() ) ;
             
             String web_link=queue.poll();
              //delete front of the queue from DB
             DB1.deleteQueueFront();
-            web_link=NormalizeURL.normalize(web_link);
+           // web_link=NormalizeURL.normalize(web_link);
            
       try
         {
@@ -90,6 +95,7 @@ public class WebCrawler extends Thread{
             
              if(!DB1.containsSet(web_link,CrawlerID)&&DB1.getCountMap(tempp)<BaseCounter)
             {
+                DB1.insertMap(tempp);
                 DownloadDocument(web_link);
                int id=DB1.getsetId(web_link);
                DB1.insertIndexerUrl(id);
@@ -119,10 +125,12 @@ public class WebCrawler extends Thread{
                     flag = LinkHTTPS.contains(disallowed) ? false :  flag; 
                 }
                 if(flag)
-                {      queue.add(LinkHTTPS);
+                {    if(!DB1.containsSet(LinkHTTPS,CrawlerID))
+                    { queue.add(LinkHTTPS);
                       DB1.insertQueue(LinkHTTPS);
- 
-            }
+                    }
+                
+                }
             }
            
             
@@ -141,8 +149,7 @@ public class WebCrawler extends Thread{
        // }
             
     }
-        //reset autoInc to 1
-        DB1.setAutoIncQueue();
+        
     }
     
     private String LangEn(URL LinkURL)
@@ -164,12 +171,12 @@ public class WebCrawler extends Thread{
               
                 if(cnt>=2)
                 {
-                    DB1.insertMap(u);
+                    
                // System.out.println(u);
                 tempp=u;
                 }
-                else
-                    DB1.insertMap(tempp);
+               
+                    
      
                 return tempp;
     }

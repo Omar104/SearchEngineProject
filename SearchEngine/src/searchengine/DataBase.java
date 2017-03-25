@@ -34,7 +34,7 @@ public DataBase(String User,String Password)
     try {
         // Load the Connector/J driver
         Object newInstance = Class.forName("com.mysql.jdbc.Driver").newInstance();
-            java.sql.Connection conn = DriverManager.getConnection(url, user, password);
+            java.sql.Connection conn = DriverManager.getConnection(url+"?useUnicode=yes&characterEncoding=UTF-8", user, password);
         statementQ = conn.createStatement();
         } catch (IllegalAccessException | InstantiationException ex) {
             Logger.getLogger(SearchEngine.class.getName()).log(Level.SEVERE, null, ex);
@@ -112,12 +112,21 @@ public void pageIsIndexed(String url_id)
 public void insertWordIntoWordCnt(String word,String url_id,boolean title,int position)
 {
     try {
-        if(word.length() > 20)
+        boolean flag = true;
+         for(int i =0 ; i <word.length(); i++)
+         {
+             if(word.charAt(i)!= '?')
+             {
+                 flag = false;
+                 break;
+             }
+         }
+        if(word.length() > 20 || flag)
             return;
-        statementQ.executeUpdate("INSERT INTO `word_cnt`(`word`, `url_id`, `title`, `position`) VALUES ('"+ word +"',"+url_id+","+ String.valueOf(title)+","+ String.valueOf(position)+ ")");
+        statementQ.executeUpdate("INSERT INTO `word_cnt`(`url_id`, `title`, `position`,`word`) VALUES ("+url_id+","+ String.valueOf(title)+","+ String.valueOf(position)+",'"+ word +"')");
     } catch (SQLException ex) {
         Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
-        System.out.println(word);
+       
     }
 } 
 public void insertIntoWordCntPerPage(String s , int cnt)
@@ -190,7 +199,6 @@ public boolean containsSet(String url2,int CrawlerID)
             else
                 return true;
               } catch (SQLException ex) {
-                  System.out.print("el error f om l link da "+ url2);
                   Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
               }
              return false;
@@ -361,7 +369,6 @@ public int getsetId(String url2)
                   
 
               } catch (SQLException ex) {
-                 // System.out.println("SELECT setID FROM `crawlerset`  where `URL` ='"+url2+"'");
                   Logger.getLogger(DataBase.class.getName()).log(Level.SEVERE, null, ex);
               }
             return id;
