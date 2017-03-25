@@ -41,6 +41,7 @@ public class Robot {
                        {
                           if(line.contains("Disallow: ")) 
                           {
+                              if(line.length() > 11)
                               dis.add(url.toString()+line.substring(11,line.length()));
                           }
                           else if(!line.contains("Allow: "))

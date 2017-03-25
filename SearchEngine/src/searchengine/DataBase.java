@@ -112,7 +112,16 @@ public void pageIsIndexed(String url_id)
 public void insertWordIntoWordCnt(String word,String url_id,boolean title,int position)
 {
     try {
-        if(word.length() > 20)
+        boolean flag = true;
+         for(int i =0 ; i <word.length(); i++)
+         {
+             if(word.charAt(i)!= '?')
+             {
+                 flag = false;
+                 break;
+             }
+         }
+        if(word.length() > 20 || flag)
             return;
         statementQ.executeUpdate("INSERT INTO `word_cnt`(`word`, `url_id`, `title`, `position`) VALUES ('"+ word +"',"+url_id+","+ String.valueOf(title)+","+ String.valueOf(position)+ ")");
     } catch (SQLException ex) {

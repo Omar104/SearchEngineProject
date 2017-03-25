@@ -104,10 +104,22 @@ public class Indexer {
     public LinkedList<String> cleanString(String s)
     {
         return removeStopWords(stemm(removeStopWords(tokenize(s))));
-    }
+    }   
     
-    public void run() throws SQLException
+ 
+    public void run()
     {
+        try{
+            this.go();
+        }
+        catch (SQLException e)
+        {
+            System.out.println(e.toString());
+        }
+    }
+    public void go() throws SQLException
+    {
+       
         if(Stopwords.isEmpty())
             this.readStopwords();
         ResultSet Res = DB.getIndexerUrl();
@@ -117,17 +129,17 @@ public class Indexer {
           String Id = Res.getString("url_id");
           System.out.println(Id);
           try{
-          Document Content = Jsoup.parse(new File("DOCUMENTS/"+Id+".txt"),"UTF-8");
+          Document Content = Jsoup.parse(new File("DOCUMENTS/"+Id+".txt"),null);
           LinkedList<String> L = cleanString(Content.title());
           int sz ;  sz = L.size();
           int cnt = 1; 
           L = cleanString(Content.title()+" "+Content.body().text());
-          
           DB.insertIntoWordCntPerPage(Id, L.size());
           DB.clearWordCount(Id);
           
            for(String word : L)
            {
+               
                if(cnt <= sz)
                {
                    DB.insertWordIntoWordCnt(word, Id, true, cnt++);
@@ -145,6 +157,6 @@ public class Indexer {
               System.out.println(e.toString());
           }
        }
-       
+        
     }
 }

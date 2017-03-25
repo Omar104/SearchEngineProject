@@ -5,6 +5,7 @@
  */
 package searchengine;
 
+
 import java.io.IOException;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -22,44 +23,49 @@ import java.util.logging.Logger;
  */
 public class SearchEngine {
 
-    /**
+    /**6
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException {
        
-        DataBase DB2 = new DataBase("root","");
         
-        DB2.deleteAll("basecount");
-        DB2.deleteAll("crawlerqueue");
-        int maxCrawler=DB2.getMaxCrawler();
+        DataBase DB2 = new DataBase("root","");
+        Queue<String> Q1 = DB2.getQueue();
         Scanner scanner = new Scanner (System.in);
         System.out.println("Enter number of threads");
+        Indexer Indexer = new Indexer(DB2);
         int NumberOfThreads=scanner.nextInt();
         int TotalSize=5000;
-        String URLSeeds[]={"https://en.wikipedia.org/","https://www.google.com.eg/","https://www.youtube.com","https://www.yahoo.com/"};
-        WebCrawler[] Seeds =new WebCrawler[6];
+        
+        while(true){
+        int maxCrawler=DB2.getMaxCrawler();
+        String URLSeeds[]={"https://en.wikipedia.org/","https://www.google.com.eg/","https://dmoztools.net/","https://www.yahoo.com/","https://www.theguardian.com/"," https://steamcommunity.com/","https://www.amazon.com/"};
+        for(int i = NumberOfThreads; i<URLSeeds.length; i++)
+         Q1.add(URLSeeds[i]);
+        WebCrawler[] Seeds =new WebCrawler[NumberOfThreads];
         
         for(int i=0;i<NumberOfThreads;i++){
-            Seeds[i]=(new WebCrawler(URLSeeds[i%URLSeeds.length],TotalSize,maxCrawler+1));
+            Seeds[i]=(new WebCrawler(URLSeeds[i%URLSeeds.length],TotalSize,maxCrawler+1,Q1));
             
         }
         
-       
         try{
             for (WebCrawler Seed : Seeds) {
                 Seed.join();
             }
+           Indexer.go();
         }
-   
-      
+        
         catch (InterruptedException e)
         {
             System.out.println("seed1  interputed"); 
         }
+        
        
         
         System.out.println("get "+DB2.getSize("crawlerset",maxCrawler+1));
-       
+        
+       }
     }
     
 }
