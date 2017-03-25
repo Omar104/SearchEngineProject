@@ -6,6 +6,8 @@
 
 package searchengine;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
@@ -17,7 +19,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -26,24 +27,26 @@ import org.jsoup.select.Elements;
 
 public class WebCrawler extends Thread{
     private Queue<String> queue=new LinkedList<>();
-    private static Document htmlDocument;  
-     private static Document htmlDocument2;  
+    private  Document htmlDocument;  
+     private  Document htmlDocument2;  
     private String root;
-    private static final String USER_AGENT =
-            "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.112 Safari/535.1";
-    private DataSet DS;
-    private DataMap DM;
+    private DataBase DB1;
+     private int CrawlerID;
+     private Connection connection;
     private int TotalSize;
-    private float PercentageTotalSize=0.01f;
+    private float PercentageTotalSize=0.07f;
     private int BaseCounter;
-    public  WebCrawler(String temp, DataSet Data_Temp,DataMap Data_Map,int TS)
+    public  WebCrawler(String temp,int TS,int CrawlID,Queue<String> Q1)
     {
-        DS = Data_Temp;
-        DM=Data_Map;
+        this.queue = Q1;
+        CrawlerID=CrawlID;
+        DB1=new DataBase("root","");
         TotalSize=TS;
         BaseCounter=(int)(TotalSize*PercentageTotalSize);
+       // BaseCounter= 300;
         this.root = temp;
         this.start();
+        
     }
 
     
@@ -57,28 +60,50 @@ public class WebCrawler extends Thread{
             Logger.getLogger(WebCrawler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-  
     private void BFS(String seed)  throws IOException 
     {
-       
-        queue.add(seed);
-        DS.Add_Set(seed);
-        while(!queue.isEmpty()){
-            if(DS.Get_Size()>=TotalSize)
-                return;
+        
+          
+            queue.add(seed);
+            DB1.insertQueue(seed);
+        
+            while(!queue.isEmpty()){
+            
+            if(DB1.getSize("crawlerset",CrawlerID)>=TotalSize)
+            {  
+                DB1.deleteAll("crawlerqueue");
+                 DB1.setAutoIncQueue();
+                queue.clear();
+                DB1.setAutoIncQueue();
+               // CrawlerID++;
+              //  DB1.insertSet(root, CrawlerID);
+//                queue.add(root);
+//                DB1.insertQueue(root); bdl de dnay l indexer
+                DB1.deleteAll("basecount");
+                return ;
+            }
+            System.out.println(Thread.currentThread().getName() ) ;
+            
             String web_link=queue.poll();
-            /**/
+             //delete front of the queue from DB
+            DB1.deleteQueueFront();
+           // web_link=NormalizeURL.normalize(web_link);
            
-           // System.out.println(web_link);//remove
-            
-            
-            
       try
         {
-            Connection connection = Jsoup.connect(web_link).userAgent(USER_AGENT);
-            Document htmlDocument = connection.get();
-            WebCrawler.htmlDocument = htmlDocument;
+            String tempp=LangEn(new URL(web_link));
             
+             if(!DB1.containsSet(web_link,CrawlerID)&&DB1.getCountMap(tempp)<BaseCounter)
+            {
+                DB1.insertMap(tempp);
+                DownloadDocument(web_link);
+               int id=DB1.getsetId(web_link);
+               DB1.insertIndexerUrl(id);
+               
+            }
+             
+            else continue;
+          
            
             if(!connection.response().contentType().contains("text/html"))
             {
@@ -86,29 +111,49 @@ public class WebCrawler extends Thread{
                 
             }
            
-             //--------------------
-        //    String linkOnPage = htmlDocument.select("html").attr("lang");
-       //     System.out.println(linkOnPage);
-       //     if(!linkOnPage.contains("en"))
-      //      {
-     //           System.out.println("Removed--------"+web_link);
-       //      DS.RemoveElement_Set(web_link);
-         //                     continue;
-//          }
-            if(DS.Get_Size()>=TotalSize)//malhaash lazma
-                   return;
-           // System.out.println(web_link);
-            //-----------------
             Elements linksOnPage = htmlDocument.select("a[href]");
-            System.out.println("Found (" + linksOnPage.size() + ") links");
+            System.out.println("Found (" + linksOnPage.size() + ") links from "+web_link);
+            HashSet<String> h1 = Robot.disallowed(new URL(web_link));
+            
             for(Element link : linksOnPage)
             {
-                if(DS.Get_Size()>=TotalSize)
-                    return;
-                  
                 String LinkHTTPS=link.attr("abs:href" );//link.absUrl("href")
-                URL LinkURL=new URL(LinkHTTPS);
-                String tempp=LinkURL.getHost();
+                LinkHTTPS=NormalizeURL.normalize(LinkHTTPS);
+                boolean flag = true ;
+                for(String disallowed : h1)
+                {
+                    flag = LinkHTTPS.contains(disallowed) ? false :  flag; 
+                }
+                if(flag)
+                {    if(!DB1.containsSet(web_link,CrawlerID))
+                    { queue.add(LinkHTTPS);
+                      DB1.insertQueue(LinkHTTPS);
+                    }
+                }
+            }
+           
+            
+            
+        }
+      catch(IOException ioe)
+        {
+            // We were not successful in our HTTP request
+            System.out.print(ioe.getMessage());
+        }
+      catch(IllegalArgumentException e){
+            System.out.print(e.getMessage());
+        }
+        //catch(MalformedURLException e){
+        //    System.out.print(e.getMessage());
+       // }
+            
+    }
+        
+    }
+    
+    private String LangEn(URL LinkURL)
+    {
+         String tempp=LinkURL.getHost();
                 int cnt=0;
                 String u="";
                 for(int c=0;c<tempp.length();c++)
@@ -125,77 +170,24 @@ public class WebCrawler extends Thread{
               
                 if(cnt>=2)
                 {
-                    DM.AddBucket(u);
+                    
                // System.out.println(u);
                 tempp=u;
                 }
-                else
-                    DM.AddBucket(tempp);
-                
-                    //&&LangEn(LinkHTTPS)
-                if(!DS.Contains_Set(LinkHTTPS)&&DM.GetCount(tempp)<BaseCounter){
-                   queue.add(LinkHTTPS);
-                    DS.Add_Set(LinkHTTPS);
-              // System.out.println(LinkHTTPS);
-                   // System.out.println(LinkURL.getHost());
-              
-              // System.out.println((t).getFile());
-                }
                
-               
-            }
-            
-        }
-      catch(IOException ioe)
-        {
-            // We were not successful in our HTTP request
-            System.out.print(ioe.getMessage());
-        }
-      catch(IllegalArgumentException e){
-            System.out.print(e.getMessage());
-        }
-        //catch(MalformedURLException e){
-        //    System.out.print(e.getMessage());
-       // }
-            
-    }
+                    
+     
+                return tempp;
     }
     
-    private boolean LangEn(String LinkHTTPS)
+    private synchronized void  DownloadDocument(String web_link) throws IOException
     {
-         try
-        {
-            Connection connection2 = Jsoup.connect(LinkHTTPS).userAgent(USER_AGENT);
-            Document htmlDocument2 = connection2.get();
-            WebCrawler.htmlDocument2 = htmlDocument2; 
-            
-            if(!connection2.response().contentType().contains("text/html"))
-            {
-                System.out.println("**Failure** Retrieved something other than HTML");
-               
-            }
-            String linksOnPage = htmlDocument2.select("html").attr("lang");
-            
-            //System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "+ linksOnPage );
-            if(linksOnPage.contains("en"))
-                return true;
-            else
-                return false;
-              
-           
-
-
-        }
-
-        
-      catch(IOException ioe)
-        {
-            // We were not successful in our HTTP request
-            System.out.print(ioe.getMessage());
-        }
-      catch(IllegalArgumentException e){
-            System.out.print(e.getMessage());
-        }
-         return true;
+            connection = Jsoup.connect(web_link).timeout(7000);
+                this.htmlDocument = connection.get();
+                DB1.insertSet(web_link,CrawlerID); // mtnsa4 ya omar ya sayed w ya omar ya said t-edito 3l insert
+                 int id= DB1.getsetId(web_link);
+                    BufferedWriter out = new BufferedWriter(new FileWriter("DOCUMENTS/"+id+".txt"));
+                    out.write(this.htmlDocument.toString());
+                    out.close();
     }
 }

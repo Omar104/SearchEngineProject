@@ -5,11 +5,15 @@
  */
 package searchengine;
 
+
 import java.io.IOException;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,61 +23,50 @@ import java.util.logging.Logger;
  */
 public class SearchEngine {
 
-    /**
+    /**6
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
-    DataBase DB1=new DataBase("root","");
-    System.out.println(DB1.getSize("crawlerset"));
-    DB1.insertSet("Barca");
-    DB1.insertSet("Barca");
-    System.out.println(DB1.containsSet("Barcelona"));
-    DB1.insertSet("Barcelona");
-    DB1.insertSet("Barcelona");
-    DB1.insertSet("Barcelona");
-    System.out.println(DB1.containsSet("Barcelona"));
-    DB1.insertSet("MSN");
-    DB1.insertSet("MSN");
-    DB1.insertSet("6-5");
-    System.out.println(DB1.getSize("crawlerset"));
-    DB1.deleteAll("crawlerset");
-    DB1.insertMap("BARCA$EVER");
-    
-    System.out.println(DB1.getCountMap("BARCA$EVER"));
-    DB1.deleteAll("crawlerqueue");
-    DB1.insertQueue("YESWECAN");
-    DB1.insertQueue("YESWECAN2");
-    DB1.deleteRecord("YESWECAN","crawlerqueue","UrlName");
-    
+    public static void main(String[] args) throws SQLException {
+       
+        
+        DataBase DB2 = new DataBase("root","");
+        Queue<String> Q1 = DB2.getQueue();
+        Scanner scanner = new Scanner (System.in);
+        System.out.println("Enter number of threads");
+        Indexer Indexer = new Indexer(DB2);
+        int NumberOfThreads=scanner.nextInt();
+        int TotalSize=5000;
+        
+        while(true){
+        int maxCrawler=DB2.getMaxCrawler();
+        String URLSeeds[]={"https://en.wikipedia.org/","https://www.google.com.eg/","https://dmoztools.net/","https://www.yahoo.com/","https://www.theguardian.com/"," https://steamcommunity.com/","https://www.amazon.com/"};
+        for(int i = NumberOfThreads; i<URLSeeds.length; i++)
+         Q1.add(URLSeeds[i]);
+        WebCrawler[] Seeds =new WebCrawler[NumberOfThreads];
+        
+        for(int i=0;i<NumberOfThreads;i++){
+            Seeds[i]=(new WebCrawler(URLSeeds[i%URLSeeds.length],TotalSize,maxCrawler+1,Q1));
+            
+        }
+        
+        try{
+            for (WebCrawler Seed : Seeds) {
+                Seed.join();
+            }
+           Indexer.go();
+        }
+        
+        catch (InterruptedException e)
+        {
+            System.out.println("seed1  interputed"); 
+        }
+        
+       
+        
+        System.out.println("get "+DB2.getSize("crawlerset",maxCrawler+1));
+        
+       }
     }
-//        
-//        
-//        
-//        
-//        
-//        
-//        
-//        
-//        // TODO code application logic here
-//        DataSet s1 = new DataSet();
-//        DataMap m1 = new DataMap();
-//  
-//      //  System.out.println(m1.MapCount.get("h"));
-//        WebCrawler seed1=new WebCrawler("https://en.wikipedia.org/",s1,m1,200);//total size as input
-//        WebCrawler seed2=new WebCrawler("https://www.goolge.com.eg/",s1,m1,200);
-//        try{
-//            seed1.join();
-//            seed2.join();
-//        }
-//        catch (InterruptedException e)
-//        {
-//            System.out.println("seed1  interputed"); 
-//        }
-//         System.out.println("Size:");
-//        System.out.println(s1.Get_Size());
-//       // System.out.println(m1.MapCount.get("www.google.com.eg"));
-//       s1.Print_Set();
-//    }
-//    
+    
 }
     
